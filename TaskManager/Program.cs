@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace TaskManager
 {
@@ -14,8 +15,9 @@ namespace TaskManager
         static string[,] _taskTable = new string[,] { };
         static List<string> _tasks = new List<string>();
         static List<string> _members = new List<string>();
-        static string[] _status = new string[] { "STATUS", "Open", "Assigned", "For Verification", "For Revision", "Closed" };
+        static string[] _status = new string[] { "STATUS", "OPEN", "ASSIGNED", "FOR VERIFICATION", "FOR REVISION", "CLOSED" };
         static Random rnd = new Random();
+        static int _assignCount = 0;
 
         static void Main(string[] args)
         {
@@ -28,11 +30,11 @@ namespace TaskManager
             //1 - Task
             //2 - Member
             //3 - Status
-            //thread.sleep tasks by setting task duration formula then set status to for verification
-            //ask team lead whether members' works are okay or not (note: might use loop for this)
-            //if okay, set task status to CLOSED
+            //thread.sleep tasks by setting task duration formula then set status to for verification [DONE]
+            //ask team lead whether members' works are okay or not (note: might use loop for this) [DONE]
+            //if okay, set task status to CLOSED [DONE]
             //if not okay yet, member will work again then prog will loop back to asking team lead
-            //if all tasks are closed, end the program
+            //if all tasks are closed, end the program [DONE]
 
             //read tasks and members from files
             _tasks = readfromFiles("ToDo.csv");
@@ -40,10 +42,11 @@ namespace TaskManager
 
             //set table size to number of tasks
             _taskTable = new string[_tasks.Count, 3];
+            _assignCount = _tasks.Count - 1;
             taskTableIni();
 
             //assigning
-            while(_members.Count != 1)
+            while(_assignCount != 0)
             {
                 //displays table
                 displayTasks();
@@ -54,18 +57,25 @@ namespace TaskManager
 
                 //get user input of team lead for assigning members
                 assignMembers();
-
-                Console.Clear();
             }
 
             //members will do their tasks
             displayTasks();
-            Console.WriteLine("\n---------------------------------------------------");
-            int workTime = rnd.Next(20, 50) * 100;
-            Thread.Sleep(workTime);
-            Console.WriteLine("");
+            working();
+            updateStatus("complete");
             displayTasks();
 
+            while (true)
+            {
+                //check for revisions
+                updateStatus("verify");
+                displayTasks();
+                if (taskChecker())
+                    working();
+                else
+                    break;
+            }
+            Console.WriteLine("I have left the while loop!");
             Console.ReadKey();
         }
         static List<string> readfromFiles(string fileName)
@@ -86,7 +96,6 @@ namespace TaskManager
         static void taskTableIni()
         {
             //initializes and inputs data in the table
-            int xCount = _taskTable.GetLength(0);
             int yCount = _taskTable.GetLength(1);
             for (int y = 0; y < _taskTable.GetLength(1); y++)
             {
@@ -120,6 +129,7 @@ namespace TaskManager
 
             int maxSpace = longestWord();
 
+            Console.Clear();
             //display
             for (int x = 0; x < _taskTable.GetLength(0); x++)
             {
@@ -133,6 +143,7 @@ namespace TaskManager
                 }
                 Console.WriteLine();
             }
+            Console.WriteLine("\n-----------------------------------------------------------------------------------------------------");
         }
         static int longestWord()
         {
@@ -151,9 +162,24 @@ namespace TaskManager
             }
             return maxSpace;
         }
+        static void working()
+        {
+            int workTime = rnd.Next(20, 40) * 100;
+            Console.Write("Members are working on their tasks ");
+            Thread.Sleep(1000);
+            //for(int x = 0; x < 20; x++)
+            //{
+            //    Console.Write(". ");
+            //    Thread.Sleep(1000);
+            //}
+        }
         static void assignMembers()
         {
             string[] tempArr = new string[] { };
+            string name = "Leila";
+            Console.Write($"Hello, {name}\n" +
+                          $"Assign members to tasks using the format: 'TASKNUMBER-MEMBER' ex: 1-Leila\n" +
+                          $"--> ");
             tempArr = assignInput(tempArr);
             if (tempArr.Length > 1 && _members.Contains(tempArr[1]) && int.Parse(tempArr[0]) < _tasks.Count && int.Parse(tempArr[0]) > 0)
             {
@@ -165,11 +191,7 @@ namespace TaskManager
                         {
                             _taskTable[x, y + 1] = tempArr[1];
                             _taskTable[x, y + 2] = _status[2];
-                            for (int i = 0; i < _members.Count; i++)
-                            {
-                                if (_members[i] == tempArr[1])
-                                    _members.RemoveAt(i);
-                            }
+                            _assignCount--;
                         }
                     }
                 }
@@ -183,25 +205,95 @@ namespace TaskManager
         static string[] assignInput(string[] tempArr)
         {
             string input = "";
-            string name = "Leila";
-            Console.Write($"Hello, {name}\n" +
-                          $"Assign members to tasks using the format: 'TASKNUMBER-MEMBER' ex: 1-Leila\n" +
-                          $"--> ");
             input = Console.ReadLine().ToUpper();
             tempArr = input.Split('-');
 
-            if (tempArr.Length != 2 && !input.Contains('-'))
+            if (tempArr.Length != 2 && !input.Contains('-') || tempArr[0] == "" || tempArr[1] == "")
                 tempArr = new string [] { "" };
 
-                return tempArr;
+            return tempArr;
+        }
+        static string[] verifyTasks()
+        {
+            string[] tempArr = new string[] { };
+            displayTasks();
+            Console.Write($"TASK VERIFICATION\n" +
+                          $"Update the status of a task using the: 'TASKNUMBER-STATUS' ex: 1-Closed\n" +
+                          $"*If all tasks have passed verification press 'F' to finish verification and close all open tasks.\n" +
+                          $"--> ");
+            tempArr = assignInput(tempArr);
+            
+            return tempArr;
+        }
+        static void updateStatus(string statusType)
+        {
+            string[] updateArr = new string[] { };
+
+            if (statusType == "complete")
+            {
+                for (int y = 0; y < _taskTable.GetLength(1); y++)
+                {
+                    for (int x = 0; x < _taskTable.GetLength(0); x++)
+                    {
+                        if (x > 0 && y == 2)
+                        {
+                            if(_taskTable[x, y] == _status[2])
+                                _taskTable[x, y] = _status[3];
+                        }
+                    }
+                }
+            }
+            if (statusType == "verify")
+            {
+                Console.WriteLine("All Assigned Tasks Have Been Completed! Press any key to continue. . .");
+                Console.ReadKey();
+                int i = 0;
+                while(i < _tasks.Count - 1)
+                {
+                    updateArr = verifyTasks();
+                    for (int x = 0; x < _taskTable.GetLength(0); x++)
+                    {
+                        for (int y = 0; y < _taskTable.GetLength(1); y++)
+                        {
+                            if (x == int.Parse(updateArr[0]) && y == 2 && updateArr[1] == _status[5]) //closed
+                            {
+                                _taskTable[x, y] = updateArr[1];
+                                i++;
+                            }
+                            else if (x == int.Parse(updateArr[0]) && y == 2 && updateArr[1] == _status[4]) //revision
+                            {
+                                _taskTable[x, y] = updateArr[1];
+                                i++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        static bool taskChecker()
+        {
+            bool allClosed = false;
+            
+            for (int y = 0; y < _taskTable.GetLength(1); y++)
+            {
+                for (int x = 0; x < _taskTable.GetLength(0); x++)
+                {
+                    if (x > 0 && y == 2)
+                    {
+                        if (_taskTable[x, y] == _status[4]) //checks is there is for revision
+                            allClosed = true;
+                    }
+                }
+            }
+
+            return allClosed;
         }
         static void displayMembers()
         {
-            Console.WriteLine("---------------------------------------------------");
-            Console.Write("Idle Members:\n");
+            Console.Write("Active Members:\n");
             for (int i = 1; i < _members.Count; i++)
                 Console.WriteLine($"* {_members[i]}");
-            Console.WriteLine("\n---------------------------------------------------");
+            Console.WriteLine("\n-----------------------------------------------------------------------------------------------------");
         }
     }
 }
