@@ -10,12 +10,15 @@ namespace TaskManager
 {
     internal class Program
     {
+        static string[,] _taskTable = new string[,] { };
+        static string[] _status = new string[] { "STATUS", "Open", "Assigned", "For Verification", "For Revision", "Closed" };
+
         static void Main(string[] args)
         {
             //Prog will read 2 external files: (1) Members file; and (2) Task to be done, then store in their own lists [DONE]
-            //Show creation of tasks with taskDesc and timeCreated (kahit sa last na)
+            //Show creation of tasks with taskDesc and timeCreated (kahit sa last na, also might put this in output file instead)
             //taskTable will have tasks but no members assigned to each one yet, and ALL TASK STATUS will be OPEN [DONE]
-            //Team lead will assign tasks, then prog will store the assigned member and task info in taskList 
+            //Team lead will assign tasks, then prog will store the assigned member and task info in taskTable
             //Once team lead assigns a task, the TASK STATUS will be TASK ASSIGNED
             //TABLE COLUMNS
             //1 - Task
@@ -29,7 +32,6 @@ namespace TaskManager
 
             List<string> tasks = new List<string>();
             List<string> members = new List<string>();
-            string[] status = new string[] { "STATUS", "Open", "Assigned", "For Verification", "For Revision", "Closed"};
             string input = "";
 
             //read tasks and members from files
@@ -37,17 +39,21 @@ namespace TaskManager
             members = readfromFiles("Members.csv");
 
             //set table size to number of tasks
-            string[,] taskTable = new string[tasks.Count, 3];
+            _taskTable = new string[tasks.Count, 3];
+            taskTableIni(tasks, members);
 
             //displays initialized table
-            displayTasks(taskTableIni(taskTable, tasks, members, status));
+            displayTasks();
             Console.WriteLine();
 
             //displays members ready to work
             displayMembers(members);
 
-            //get user input of team lead
-            input = assignMembers(members);
+            //get user input of team lead for assigning members
+            assignMembers(members);
+
+            //displays table with assigned members
+            displayTasks();
 
             Console.ReadKey();
         }
@@ -66,83 +72,101 @@ namespace TaskManager
             }
             return tableInfo;
         }
-        static string[,] taskTableIni(string[,] taskTable, List<string> tasks, List<string> members, string[] status)
+        static void taskTableIni(List<string> tasks, List<string> members)
         {
             //initializes and inputs data in the table
-            int xCount = taskTable.GetLength(0);
-            int yCount = taskTable.GetLength(1);
-            for (int y = 0; y < taskTable.GetLength(1); y++)
+            int xCount = _taskTable.GetLength(0);
+            int yCount = _taskTable.GetLength(1);
+            for (int y = 0; y < _taskTable.GetLength(1); y++)
             {
                 int z = 3;
-                for (int x = 0; x < taskTable.GetLength(0); x++)
+                for (int x = 0; x < _taskTable.GetLength(0); x++)
                 {
                     if (x == yCount - z && y == 0)
-                        taskTable[x, y] = tasks[x];
+                        _taskTable[x, y] = tasks[x];
                     else if (x == yCount - z && y == 1)
                     {
                         if (x == 0)
-                            taskTable[x, y] = members[0];
+                            _taskTable[x, y] = members[0];
                         else
-                            taskTable[x, y] = "-";
+                            _taskTable[x, y] = "-";
                     }
                     else if (x == yCount - z && y == 2)
                     {
                         if (x == 0)
-                            taskTable[x, y] = status[0];
+                            _taskTable[x, y] = _status[0];
                         else
-                            taskTable[x, y] = status[1];
+                            _taskTable[x, y] = _status[1];
                     }
                     z--;
                 }
             }
-            return taskTable;
         }
-        static void displayTasks(string[,] taskTable)
+        static void displayTasks()
         {
             int numSpace = 0;
             string spaces = "";
 
-            int maxSpace = longestWord(taskTable);
+            int maxSpace = longestWord();
 
             //display
-            for (int x = 0; x < taskTable.GetLength(0); x++)
+            for (int x = 0; x < _taskTable.GetLength(0); x++)
             {
-                for (int y = 0; y < taskTable.GetLength(1); y++)
+                for (int y = 0; y < _taskTable.GetLength(1); y++)
                 {
-                    numSpace = maxSpace - taskTable[x, y].Length;
+                    numSpace = maxSpace - _taskTable[x, y].Length;
                     if (numSpace < 0)
                         numSpace = 0;
                     spaces = new string(' ', numSpace);
-                    Console.Write($"{taskTable[x, y]}{spaces} ");
+                    Console.Write($"{_taskTable[x, y]}{spaces} ");
                 }
                 Console.WriteLine();
             }
         }
-        static int longestWord(string[,] taskTable)
+        static int longestWord()
         {
             int maxSpace = 0;
             string wordChar = "";
 
             //get longest char
-            for (int x = 0; x < taskTable.GetLength(0); x++)
+            for (int x = 0; x < _taskTable.GetLength(0); x++)
             {
-                for (int y = 0; y < taskTable.GetLength(1); y++)
+                for (int y = 0; y < _taskTable.GetLength(1); y++)
                 {
-                    wordChar = taskTable[x, y];
+                    wordChar = _taskTable[x, y];
                     if (maxSpace < wordChar.Length)
                         maxSpace = wordChar.Length;
                 }
             }
             return maxSpace;
         }
-        static string assignMembers(List<string> members)
+        static void assignMembers(List<string> members)
+        {
+            string[] tempArr = new string[] { };
+            tempArr = assignInput(tempArr);
+            for(int x = 0; x < _taskTable.GetLength(0); x++)
+            {
+                for (int y = 0; y < _taskTable.GetLength(1); y++)
+                {
+                    if (_taskTable[x, y][0] == tempArr[0][0])
+                    {
+                        _taskTable[x, y + 1] = tempArr[1];
+                        _taskTable[x, y + 2] = _status[2];
+                    }
+                }
+            }
+        }
+        static string[] assignInput(string[] tempArr)
         {
             string input = "";
             string name = "Leila";
             Console.Write($"Hello, {name}\n" +
-                          $"Assign members to tasks using format \n" +
+                          $"Assign members to tasks using format 'TASKNUMBER-MEMBER'\n" +
                           $"--> ");
-            return input;
+            input = Console.ReadLine().ToUpper();
+            tempArr = input.Split('-');
+
+            return tempArr;
         }
         static void displayMembers(List<string> members)
         {
