@@ -33,7 +33,7 @@ namespace TaskManager
             //thread.sleep tasks by setting task duration formula then set status to for verification [DONE]
             //ask team lead whether members' works are okay or not (note: might use loop for this) [DONE]
             //if okay, set task status to CLOSED [DONE]
-            //if not okay yet, member will work again then prog will loop back to asking team lead
+            //if not okay yet, member will work again then prog will loop back to asking team lead [DONE]
             //if all tasks are closed, end the program [DONE]
 
             //read tasks and members from files
@@ -62,15 +62,17 @@ namespace TaskManager
             //members will do their tasks
             displayTasks();
             working();
-            updateStatus("complete");
-            displayTasks();
+            //updateStatus("complete");
+            //displayTasks();
 
             while (true)
             {
                 //check for revisions
+                updateStatus("complete");
+                displayTasks();
                 updateStatus("verify");
                 displayTasks();
-                if (taskChecker())
+                if (taskChecker("check1"))
                     working();
                 else
                     break;
@@ -80,8 +82,6 @@ namespace TaskManager
         }
         static List<string> readfromFiles(string fileName)
         {
-            string[] tempArr = new string[] { };
-            string tempWord = "";
             List<string> tableInfo = new List<string>();
             using (StreamReader sr = new StreamReader(fileName))
             {
@@ -166,12 +166,13 @@ namespace TaskManager
         {
             int workTime = rnd.Next(20, 40) * 100;
             Console.Write("Members are working on their tasks ");
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
             //for(int x = 0; x < 20; x++)
             //{
             //    Console.Write(". ");
-            //    Thread.Sleep(1000);
+            //    Thread.Sleep(workTime);
             //}
+            Console.WriteLine();
         }
         static void assignMembers()
         {
@@ -208,7 +209,7 @@ namespace TaskManager
             input = Console.ReadLine().ToUpper();
             tempArr = input.Split('-');
 
-            if (tempArr.Length != 2 && !input.Contains('-') || tempArr[0] == "" || tempArr[1] == "")
+            if (tempArr.Length != 2 || !input.Contains('-') || tempArr[0] == "" || tempArr[1] == "")
                 tempArr = new string [] { "" };
 
             return tempArr;
@@ -219,7 +220,6 @@ namespace TaskManager
             displayTasks();
             Console.Write($"TASK VERIFICATION\n" +
                           $"Update the status of a task using the: 'TASKNUMBER-STATUS' ex: 1-Closed\n" +
-                          $"*If all tasks have passed verification press 'F' to finish verification and close all open tasks.\n" +
                           $"--> ");
             tempArr = assignInput(tempArr);
             
@@ -237,40 +237,49 @@ namespace TaskManager
                     {
                         if (x > 0 && y == 2)
                         {
-                            if(_taskTable[x, y] == _status[2])
-                                _taskTable[x, y] = _status[3];
+                            if(_taskTable[x, y] == _status[2] || _taskTable[x, y] == _status[4])
+                                _taskTable[x, y] = _status[3]; //sets status from assigned - for veri (completed)
                         }
                     }
                 }
             }
             if (statusType == "verify")
             {
+                int a = 0;
                 Console.WriteLine("All Assigned Tasks Have Been Completed! Press any key to continue. . .");
                 Console.ReadKey();
-                int i = 0;
-                while(i < _tasks.Count - 1)
+
+                do
                 {
                     updateArr = verifyTasks();
                     for (int x = 0; x < _taskTable.GetLength(0); x++)
                     {
                         for (int y = 0; y < _taskTable.GetLength(1); y++)
                         {
-                            if (x == int.Parse(updateArr[0]) && y == 2 && updateArr[1] == _status[5]) //closed
+                            if (int.TryParse(updateArr[0], out a))
                             {
-                                _taskTable[x, y] = updateArr[1];
-                                i++;
+                                if (x == int.Parse(updateArr[0]) && y == 2 && updateArr[1] == _status[5]) //closed status
+                                    _taskTable[x, y] = updateArr[1];
+
+                                else if (x == int.Parse(updateArr[0]) && y == 2 && updateArr[1] == _status[4]) //for revision status
+                                    _taskTable[x, y] = updateArr[1];
                             }
-                            else if (x == int.Parse(updateArr[0]) && y == 2 && updateArr[1] == _status[4]) //revision
+                            else
                             {
-                                _taskTable[x, y] = updateArr[1];
-                                i++;
+                                Console.WriteLine("System does not contain that member or task number.");
+                                Console.ReadKey();
+                                x = _taskTable.GetLength(0);
+                                y = _taskTable.GetLength(1);
+                                //these two act as a break statement
                             }
                         }
                     }
                 }
+                while (taskChecker("check2"));
+
             }
         }
-        static bool taskChecker()
+        static bool taskChecker(string checkType)
         {
             bool allClosed = false;
             
@@ -280,8 +289,23 @@ namespace TaskManager
                 {
                     if (x > 0 && y == 2)
                     {
-                        if (_taskTable[x, y] == _status[4]) //checks is there is for revision
-                            allClosed = true;
+                        if (checkType == "check1")
+                        {
+                            if (_taskTable[x, y] == _status[4]) //checks if there is for revision, then keep working
+                            {
+                                allClosed = true;
+                                break;
+                            }
+                        }
+                        
+                        if (checkType == "check2")
+                        {
+                            if (_taskTable[x, y] == _status[3]) //checks if there is for veri left, then keep asking to change status
+                            { 
+                                allClosed = true;
+                                break;
+                            }
+                        }
                     }
                 }
             }
