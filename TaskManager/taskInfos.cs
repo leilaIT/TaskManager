@@ -9,6 +9,8 @@ namespace TaskManager
 {
     internal class taskInfos
     {
+        private DateTime dtnow = DateTime.Now;
+        public List<string> createdTasks = new List<string>();
         public List<string> readfromFiles(string fileName)
         {
             List<string> tableInfo = new List<string>();
@@ -21,6 +23,18 @@ namespace TaskManager
                 }
             }
             return tableInfo;
+        }
+        public void createTasks(List<string> _tasks)
+        {
+            Console.WriteLine("AVAILABLE TASKS");
+            for (int x = 1; x < _tasks.Count; x++)
+            {
+                Console.WriteLine($"{_tasks[x]}: {dtnow}");
+                createdTasks.Add($"{_tasks[x]}: {dtnow}");
+            }
+            Console.WriteLine("\n-----------------------------------------------------------------------------------------------------");
+            Console.WriteLine("Press any key to proceed to viewing available members. . .");
+            Console.ReadKey();
         }
         public void taskTableIni(string[,] _taskTable, List<string> _tasks, List<string> _members, string[] _status)
         {

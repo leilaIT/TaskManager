@@ -9,11 +9,43 @@ namespace TaskManager
 {
     internal class lead
     {
+        private DateTime dtnow = DateTime.Now;
         private taskInfos tInfo = new taskInfos();
-        public int assignMembers(string[,] _taskTable, List<string> _tasks, List<string> _members, string[] _status, int _assignCount)
+        public List<string> assignments = new List<string>();
+        public List<string> verification = new List<string>();
+        public List<string> teamLead = new List<string>();
+        public string leadInfo()
+        {
+            string name = "";
+            string ID = "";
+            while(name.Length < 0 || name == "")
+            {
+                Console.Clear();
+                Console.WriteLine("VERIFIER DETAILS");
+                Console.Write("Name of verifier: ");
+                name = Console.ReadLine().ToUpper();
+            }
+
+            while (ID.Length < 8 || ID == "")
+            {
+                Console.Write("Employee ID: ");
+                ID = Console.ReadLine().ToUpper();
+                Console.SetCursorPosition(0, 2);
+                Console.Write(new string(' ', 100));
+                Console.SetCursorPosition(0, 2);
+            }
+            
+            Console.WriteLine("\n-----------------------------------------------------------------------------------------------------");
+            Console.WriteLine($"Hello, {name}! Press any key to see the available tasks. . .");
+            teamLead.Add($"{name}, {ID}");
+            Console.ReadKey();
+            Console.Clear();
+
+            return name;
+        }
+        public int assignMembers(string[,] _taskTable, List<string> _tasks, List<string> _members, string[] _status, int _assignCount, string name)
         {
             string[] tempArr = new string[] { };
-            string name = "Leila";
             Console.Write($"Hello, {name}\n" +
                           $"Assign members to tasks using the format: 'TASKNUMBER-MEMBER' ex: 1-Leila\n" +
                           $"--> ");
@@ -26,6 +58,9 @@ namespace TaskManager
                     {
                         if (_taskTable[x, y][0] == tempArr[0][0])
                         {
+                            Console.WriteLine($"{tempArr[1]} was assigned a task at: {dtnow}");
+                            Console.ReadKey();
+                            assignments.Add($"{tempArr[1]} was assigned a task at: {dtnow}");
                             _taskTable[x, y + 1] = tempArr[1];
                             _taskTable[x, y + 2] = _status[2];
                             _assignCount--;
@@ -72,7 +107,7 @@ namespace TaskManager
             if (statusType == "verify")
             {
                 int a = 0;
-                Console.WriteLine("All Assigned Tasks Have Been Completed! Press any key to continue. . .");
+                Console.WriteLine($"All Assigned Tasks Have Been Completed at {dtnow}!\nPress any key to continue. . .");
                 Console.ReadKey();
 
                 do
@@ -84,11 +119,14 @@ namespace TaskManager
                         {
                             if (int.TryParse(updateArr[0], out a))
                             {
-                                if (x == int.Parse(updateArr[0]) && y == 2 && updateArr[1] == _status[5]) //closed status
+                                if ((x == int.Parse(updateArr[0]) && y == 2 && updateArr[1] == _status[5]) || 
+                                    (x == int.Parse(updateArr[0]) && y == 2 && updateArr[1] == _status[4])) //closed and for revision status
+                                {
                                     _taskTable[x, y] = updateArr[1];
-
-                                else if (x == int.Parse(updateArr[0]) && y == 2 && updateArr[1] == _status[4]) //for revision status
-                                    _taskTable[x, y] = updateArr[1];
+                                    Console.WriteLine($"Task {updateArr[0]} was verified as {updateArr[1]} at: {dtnow}");
+                                    Console.ReadKey();
+                                    verification.Add($"Task {updateArr[0]} was verified  as {updateArr[1]} at: {dtnow}");
+                                }
                             }
                             else
                             {
@@ -110,7 +148,7 @@ namespace TaskManager
             string[] tempArr = new string[] { };
             tInfo.displayTasks(_taskTable);
             Console.Write($"TASK VERIFICATION\n" +
-                          $"Update the status of a task using the: 'TASKNUMBER-STATUS' ex: 1-Closed\n" +
+                          $"Update the status of a task using the format: 'TASKNUMBER-STATUS' ex: 1-Closed\n" +
                           $"--> ");
             tempArr = assignInput(tempArr);
 

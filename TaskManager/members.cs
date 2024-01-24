@@ -19,14 +19,15 @@ namespace TaskManager
         }
         public void working()
         {
-            int workTime = rnd.Next(20, 40) * 100;
+            int workTime = 0;
             Console.Write("Members are working on their tasks ");
-            Thread.Sleep(2000);
-            //for(int x = 0; x < 20; x++)
-            //{
-            //    Console.Write(". ");
-            //    Thread.Sleep(workTime);
-            //}
+            //Thread.Sleep(2000);
+            for (int x = 0; x < 8; x++)
+            {
+                workTime = rnd.Next(10, 30) * 100;
+                Console.Write(". ");
+                Thread.Sleep(workTime);
+            }
             Console.WriteLine();
         }
     }
